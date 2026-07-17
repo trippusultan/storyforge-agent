@@ -49,6 +49,19 @@ export default function App() {
   const [duration, setDuration] = useState(45)
   const [tone, setTone] = useState('Energetic')
   const [sources, setSources] = useState(5)
+  const [llm, setLlm] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('storyforge.llm') || 'null') || {
+        provider: 'default',
+        model: '',
+        api_key: '',
+        base_url: '',
+      }
+    } catch {
+      return { provider: 'default', model: '', api_key: '', base_url: '' }
+    }
+  })
+  const [showModel, setShowModel] = useState(false)
   const [busy, setBusy] = useState(false)
   const [pipeError, setPipeError] = useState('')
   const [acctOpen, setAcctOpen] = useState(false)
@@ -56,6 +69,10 @@ export default function App() {
   const [showReset, setShowReset] = useState(false)
   const [resetEmail, setResetEmail] = useState('')
   const [resetMsg, setResetMsg] = useState('')
+
+  useEffect(() => {
+    localStorage.setItem('storyforge.llm', JSON.stringify(llm))
+  }, [llm])
 
   const loadHistory = useCallback(async () => {
     if (!user) return
@@ -82,6 +99,7 @@ export default function App() {
           duration,
           tone,
           sources,
+          llm: llm.provider === 'default' ? null : llm,
         })
         setDoc(res)
         if (user) {
@@ -98,7 +116,7 @@ export default function App() {
         setBusy(false)
       }
     },
-    [duration, tone, sources, user, loadHistory]
+    [duration, tone, sources, llm, user, loadHistory]
   )
 
   const onDelete = async (id) => {
@@ -397,7 +415,87 @@ export default function App() {
               ))}
             </div>
           </div>
+          <button
+            className={`btn model-toggle ${showModel ? 'on' : ''}`}
+            onClick={() => setShowModel((s) => !s)}
+            title="Choose any LLM provider"
+          >
+            🧠 Model: {llm.provider === 'default' ? 'Server default' : llm.provider}
+          </button>
         </div>
+        {showModel && (
+          <div className="model-panel">
+            <label>
+              Provider
+              <select
+                value={llm.provider}
+                onChange={(e) =>
+                  setLlm({ ...llm, provider: e.target.value })
+                }
+              >
+                <option value="default">Server default (Gemini)</option>
+                <option value="gemini">Gemini (own key)</option>
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic (Claude)</option>
+                <option value="ollama">Ollama (local)</option>
+                <option value="openai-compatible">OpenAI-compatible</option>
+              </select>
+            </label>
+            {llm.provider !== 'default' && llm.provider !== 'ollama' && (
+              <label>
+                API key
+                <input
+                  type="password"
+                  value={llm.api_key}
+                  onChange={(e) => setLlm({ ...llm, api_key: e.target.value })}
+                  placeholder={
+                    llm.provider === 'anthropic'
+                      ? 'sk-ant-...'
+                      : llm.provider === 'openai'
+                      ? 'sk-...'
+                      : 'AIza...'
+                  }
+                />
+              </label>
+            )}
+            <label>
+              Model
+              <input
+                value={llm.model}
+                onChange={(e) => setLlm({ ...llm, model: e.target.value })}
+                placeholder={
+                  llm.provider === 'openai'
+                    ? 'gpt-4o-mini'
+                    : llm.provider === 'anthropic'
+                    ? 'claude-3-5-sonnet-latest'
+                    : llm.provider === 'ollama'
+                    ? 'llama3.1'
+                    : llm.provider === 'openai-compatible'
+                    ? 'openrouter/...'
+                    : 'gemini-2.0-flash'
+                }
+              />
+            </label>
+            {(llm.provider === 'openai-compatible' || llm.provider === 'ollama') && (
+              <label>
+                Base URL
+                <input
+                  value={llm.base_url}
+                  onChange={(e) => setLlm({ ...llm, base_url: e.target.value })}
+                  placeholder={
+                    llm.provider === 'ollama'
+                      ? 'http://localhost:11434'
+                      : 'https://openrouter.ai/api/v1'
+                  }
+                />
+              </label>
+            )}
+            <div className="model-note">
+              Keys are stored only in this browser (localStorage) and sent
+              directly to your chosen provider.
+            </div>
+          </div>
+        )}
         <div className="composer-bar">
           <div className="composer">
             <input

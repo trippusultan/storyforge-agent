@@ -48,6 +48,7 @@ class ForgeRequest(BaseModel):
     duration: int = 45
     tone: str = "Energetic"
     sources: int = 5
+    llm: dict | None = None  # optional {provider, model, api_key, base_url}
 
 
 class SignUpRequest(BaseModel):
@@ -77,7 +78,7 @@ class HistoryAddRequest(BaseModel):
 @app.post("/api/forge")
 async def forge(req: ForgeRequest):
     try:
-        research = core.get_realtime_info(req.query, max_results=req.sources)
+        research = core.get_realtime_info(req.query, max_results=req.sources, llm_config=req.llm)
     except core.MissingKeyError as exc:
         raise HTTPException(500, str(exc))
     except core.QuotaExhaustedError as exc:
@@ -88,6 +89,7 @@ async def forge(req: ForgeRequest):
             topic=req.query,
             duration_seconds=req.duration,
             tone=req.tone,
+            llm_config=req.llm,
         )
     except core.QuotaExhaustedError as exc:
         raise HTTPException(429, str(exc))

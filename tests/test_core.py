@@ -59,12 +59,13 @@ def mock_tavily(monkeypatch):
 
 @pytest.fixture
 def mock_gemini(monkeypatch):
-    client = MagicMock()
-    client.models.generate_content.return_value = SimpleNamespace(
-        text="This is the generated text output."
-    )
-    monkeypatch.setattr(core, "_gemini_client", lambda: client)
-    return client
+    # Now generation goes through storyforge.llm.generate; mock it at the module.
+    import storyforge.llm as llm
+
+    fake = MagicMock()
+    fake.return_value = "This is the generated text output."
+    monkeypatch.setattr(llm, "generate", fake)
+    return fake
 
 
 def test_get_realtime_info_happy_path(fake_keys, mock_tavily, mock_gemini):
@@ -74,7 +75,7 @@ def test_get_realtime_info_happy_path(fake_keys, mock_tavily, mock_gemini):
     assert len(result.sources) == 2
     assert result.source_urls == ["https://example.com/1", "https://example.com/2"]
     mock_tavily.search.assert_called_once()
-    mock_gemini.models.generate_content.assert_called_once()
+    assert mock_gemini.call_count == 1
 
 
 def test_get_realtime_info_empty_query_raises():
@@ -85,9 +86,9 @@ def test_get_realtime_info_empty_query_raises():
 def test_generate_video_script_happy_path(fake_keys, mock_gemini):
     script = generate_video_script("A research brief.", topic="AI news")
     assert script == "This is the generated text output."
-    mock_gemini.models.generate_content.assert_called_once()
+    assert mock_gemini.call_count == 1
     # duration + tone should be embedded in the prompt.
-    prompt = mock_gemini.models.generate_content.call_args.kwargs["contents"]
+    prompt = mock_gemini.call_args.args[0]
     assert "seconds long" in prompt
     assert "AI news" in prompt
 
@@ -98,9 +99,9 @@ def test_generate_video_script_empty_raises():
 
 
 def test_generate_video_script_empty_response_raises(fake_keys, monkeypatch):
-    client = MagicMock()
-    client.models.generate_content.return_value = SimpleNamespace(text="")
-    monkeypatch.setattr(core, "_gemini_client", lambda: client)
+    import storyforge.llm as llm
+
+    monkeypatch.setattr(llm, "generate", lambda *a, **k: "")
     with pytest.raises(StoryForgeError):
         generate_video_script("brief")
 
@@ -111,8 +112,8 @@ def test_research_and_script_full_pipeline(fake_keys, mock_tavily, mock_gemini):
     assert out["query"] == "quantum computing"
     assert out["summary"] == "This is the generated text output."
     assert out["script"] == "This is the generated text output."
-    # research (1) + script (1) Gemini calls.
-    assert mock_gemini.models.generate_content.call_count == 2
+    # research (1) + script (1) generation calls.
+    assert mock_gemini.call_count == 2
 
 
 def test_missing_key_raises(monkeypatch):

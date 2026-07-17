@@ -22,6 +22,8 @@ from dotenv import load_dotenv
 # Load .env once at import time (GEMINI_API_KEY, TAVILY_API_KEY).
 load_dotenv()
 
+import storyforge.llm as llm
+
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 # Fallback chain: when the primary model is out of quota (429) or deprecated
 # (404), try the next available model instead of failing the whole request.
@@ -119,15 +121,16 @@ def _gemini_generate(prompt: str, *, model: str | None = None) -> str:
 # --------------------------------------------------------------------------- #
 # Primitive 1: real-time research
 # --------------------------------------------------------------------------- #
-def get_realtime_info(query: str, *, max_results: int | None = None) -> ResearchResult:
+def get_realtime_info(query: str, *, max_results: int | None = None, llm_config: dict | None = None) -> ResearchResult:
     """Fetch the latest information about ``query`` and summarize it.
 
     1. Tavily performs a real-time web search (advanced depth, includes an
        LLM-generated answer + ranked source snippets).
-    2. Gemini condenses the findings into a tight, factual research brief
-       suitable for scripting.
+    2. An LLM (user-chosen provider, default server Gemini) condenses the
+       findings into a tight, factual research brief suitable for scripting.
 
-    Returns a :class:`ResearchResult` with the summary and its sources.
+    ``llm_config`` is an optional dict (provider/model/api_key/base_url) so a
+    user can bring their own model instead of the server's Gemini key.
     """
     query = (query or "").strip()
     if not query:
@@ -170,13 +173,10 @@ def get_realtime_info(query: str, *, max_results: int | None = None) -> Research
         "RESEARCH BRIEF:"
     )
 
-    gemini = _gemini_client()
     try:
-        summary = _gemini_generate(prompt)
-    except QuotaExhaustedError:
-        raise
-    except StoryForgeError as exc:
-        raise StoryForgeError(f"Gemini summarization failed: {exc}") from exc
+        summary = llm.generate(prompt, llm.LLMConfig.from_dict(llm_config))
+    except (QuotaExhaustedError, RuntimeError) as exc:  # noqa: BLE001
+        raise StoryForgeError(f"Summarization failed: {exc}") from exc
 
     if not summary:
         # Fall back to Tavily's own answer rather than returning nothing.
@@ -201,6 +201,7 @@ def generate_video_script(
     topic: str | None = None,
     duration_seconds: int = 45,
     tone: str = "energetic and engaging",
+    llm_config: dict | None = None,
 ) -> str:
     """Turn a research brief into a short-form video script.
 
@@ -230,16 +231,13 @@ def generate_video_script(
         "SCRIPT:"
     )
 
-    gemini = _gemini_client()
     try:
-        script = _gemini_generate(prompt)
-    except QuotaExhaustedError:
-        raise
-    except StoryForgeError as exc:
-        raise StoryForgeError(f"Gemini script generation failed: {exc}") from exc
+        script = llm.generate(prompt, llm.LLMConfig.from_dict(llm_config))
+    except (QuotaExhaustedError, RuntimeError) as exc:  # noqa: BLE001
+        raise StoryForgeError(f"Script generation failed: {exc}") from exc
 
     if not script:
-        raise StoryForgeError("Gemini returned an empty script.")
+        raise StoryForgeError("The model returned an empty script.")
     return script
 
 
@@ -252,17 +250,19 @@ def research_and_script(
     duration_seconds: int = 45,
     tone: str = "energetic and engaging",
     max_results: int | None = None,
+    llm_config: dict | None = None,
 ) -> dict[str, Any]:
     """Run the full pipeline: research a topic, then script it.
 
     Returns a dict with ``summary``, ``script``, and ``sources``.
     """
-    research = get_realtime_info(query, max_results=max_results)
+    research = get_realtime_info(query, max_results=max_results, llm_config=llm_config)
     script = generate_video_script(
         research.summary,
         topic=query,
         duration_seconds=duration_seconds,
         tone=tone,
+        llm_config=llm_config,
     )
     return {
         "query": query,
