@@ -1,6 +1,9 @@
-streamlit>=1.59
-tavily-python>=0.7
-google-genai>=2.12
-fastmcp>=3.4
+# Backend (FastAPI gateway serving the React SPA + REST API)
+fastapi>=0.115
+uvicorn>=0.30
 python-dotenv>=1.0
 requests>=2.31
+# LLM providers (bring-your-own-key, multi-LLM support)
+google-genai>=2.12        # gemini (server default)
+openai>=1.30             # openai / openai-compatible (OpenRouter, Groq, ...)
+anthropic>=0.40          # anthropic (Claude)

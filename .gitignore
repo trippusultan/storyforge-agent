@@ -13,9 +13,6 @@ env/
 .env
 .env.local
 
-# streamlit
-.streamlit/secrets.toml
-
 # node / vite
 node_modules/
 frontend/dist/
