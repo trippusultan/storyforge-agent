@@ -175,7 +175,7 @@ def get_realtime_info(query: str, *, max_results: int | None = None, llm_config:
 
     try:
         summary = llm.generate(prompt, llm.LLMConfig.from_dict(llm_config))
-    except (QuotaExhaustedError, RuntimeError) as exc:  # noqa: BLE001
+    except RuntimeError as exc:  # noqa: BLE001  (QuotaExhaustedError propagates)
         raise StoryForgeError(f"Summarization failed: {exc}") from exc
 
     if not summary:
@@ -233,7 +233,7 @@ def generate_video_script(
 
     try:
         script = llm.generate(prompt, llm.LLMConfig.from_dict(llm_config))
-    except (QuotaExhaustedError, RuntimeError) as exc:  # noqa: BLE001
+    except RuntimeError as exc:  # noqa: BLE001  (QuotaExhaustedError propagates)
         raise StoryForgeError(f"Script generation failed: {exc}") from exc
 
     if not script:

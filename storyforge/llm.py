@@ -108,7 +108,11 @@ def _generate_gemini(prompt: str, cfg: LLMConfig) -> str:
                 last_exc = exc
                 continue
             raise RuntimeError(f"Gemini generation failed: {exc}") from exc
-    raise RuntimeError(
+    # Surface quota exhaustion as a typed error so the API layer can map it
+    # to HTTP 429 (and the UI can prompt for a different provider).
+    from storyforge.core import QuotaExhaustedError
+
+    raise QuotaExhaustedError(
         "All Gemini models are out of free-tier quota right now. Try again later, "
         "or pick a different provider (OpenAI/Anthropic/Ollama) in Model settings."
     )

@@ -79,10 +79,14 @@ class HistoryAddRequest(BaseModel):
 async def forge(req: ForgeRequest):
     try:
         research = core.get_realtime_info(req.query, max_results=req.sources, llm_config=req.llm)
-    except core.MissingKeyError as exc:
-        raise HTTPException(500, str(exc))
     except core.QuotaExhaustedError as exc:
         raise HTTPException(429, str(exc))
+    except core.MissingKeyError as exc:
+        raise HTTPException(500, str(exc))
+    except core.StoryForgeError as exc:
+        raise HTTPException(400, str(exc))
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(500, f"Research failed: {exc}")
     try:
         script = core.generate_video_script(
             research.summary,
@@ -96,7 +100,7 @@ async def forge(req: ForgeRequest):
     except core.StoryForgeError as exc:
         raise HTTPException(400, str(exc))
     except Exception as exc:  # noqa: BLE001
-        raise HTTPException(500, f"Pipeline error: {exc}")
+        raise HTTPException(500, f"Script generation failed: {exc}")
     return {
         "query": req.query,
         "summary": research.summary,
