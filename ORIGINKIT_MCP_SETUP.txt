@@ -1,0 +1,13 @@
+# === Paste this into ~/.hermes/config.yaml under the existing `mcp_servers:` block ===
+# (replace REPLACE_WITH_YOUR_ORIGINKIT_KEY with your real OriginKit Bearer key)
+  originkit:
+    url: "https://mcp.originkit.dev/mcp"
+    headers:
+      Authorization: "Bearer REPLACE_WITH_YOUR_ORIGINKIT_KEY"
+    enabled: true
+
+# After saving, restart Hermes so it reads the new config. Then I can call
+# list_components / get_component to drop OriginKit components into the UI.
+# NOTE: OriginKit returns React/TSX. Our app is Streamlit (Python), so I'll either
+# (a) hand-port the pure-CSS components (shiny-pill, electricborder) into the
+#     Streamlit CSS, or (b) rebuild the UI as a React+Vite SPA to use real TSX.

@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# venv
+.venv/
+venv/
+env/
+
+# secrets
+.env
+.env.local
+
+# streamlit
+.streamlit/secrets.toml
+
+# node / vite
+node_modules/
+frontend/dist/
+frontend/node_modules/
+
+# firebase
+.firebase/
+firebase-debug.log
+
+# OS
+.DS_Store
+Thumbs.db

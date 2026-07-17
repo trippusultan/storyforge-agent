@@ -1,0 +1,6 @@
+streamlit>=1.59
+tavily-python>=0.7
+google-genai>=2.12
+fastmcp>=3.4
+python-dotenv>=1.0
+requests>=2.31
