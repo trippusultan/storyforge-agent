@@ -103,13 +103,21 @@ def _to_user(data: dict) -> AuthUser:
     )
 
 
-def sign_up(email: str, password: str) -> AuthUser:
+def sign_up(email: str, password: str, display_name: str = "") -> AuthUser:
     """Create a new account and return the signed-in user."""
-    data = _post(
-        "signUp",
-        {"email": email, "password": password, "returnSecureToken": True},
-    )
-    return _to_user(data)
+    payload = {"email": email, "password": password, "returnSecureToken": True}
+    if display_name:
+        payload["displayName"] = display_name
+    data = _post("signUp", payload)
+    user = _to_user(data)
+    if display_name and not user.display_name:
+        # Persist the chosen display name on the Firebase account.
+        try:
+            update_profile(user.id_token, display_name=display_name)
+            user.display_name = display_name
+        except AuthError:
+            pass
+    return user
 
 
 def sign_in(email: str, password: str) -> AuthUser:
