@@ -80,6 +80,8 @@ async def forge(req: ForgeRequest):
         research = core.get_realtime_info(req.query, max_results=req.sources)
     except core.MissingKeyError as exc:
         raise HTTPException(500, str(exc))
+    except core.QuotaExhaustedError as exc:
+        raise HTTPException(429, str(exc))
     try:
         script = core.generate_video_script(
             research.summary,
@@ -87,6 +89,8 @@ async def forge(req: ForgeRequest):
             duration_seconds=req.duration,
             tone=req.tone,
         )
+    except core.QuotaExhaustedError as exc:
+        raise HTTPException(429, str(exc))
     except core.StoryForgeError as exc:
         raise HTTPException(400, str(exc))
     except Exception as exc:  # noqa: BLE001

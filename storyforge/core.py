@@ -23,6 +23,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+# Fallback chain: when the primary model is out of quota (429) or deprecated
+# (404), try the next available model instead of failing the whole request.
+GEMINI_FALLBACK_MODELS = [
+    m for m in os.getenv("GEMINI_FALLBACK_MODELS", "gemini-2.0-flash,gemini-2.0-flash-lite").split(",") if m
+]
 TAVILY_MAX_RESULTS = int(os.getenv("TAVILY_MAX_RESULTS", "5"))
 
 
@@ -32,6 +37,10 @@ class StoryForgeError(RuntimeError):
 
 class MissingKeyError(StoryForgeError):
     """Raised when a required API key is not configured."""
+
+
+class QuotaExhaustedError(StoryForgeError):
+    """Raised when every Gemini model in the fallback chain is rate-limited."""
 
 
 @dataclass
@@ -71,6 +80,40 @@ def _gemini_client():
     from google import genai
 
     return genai.Client(api_key=_require_key("GEMINI_API_KEY"))
+
+
+def _gemini_generate(prompt: str, *, model: str | None = None) -> str:
+    """Generate content, falling back through the model chain on 429/quota errors.
+
+    A free-tier Gemini key has a small per-model daily limit (e.g. 20 requests
+    for gemini-2.5-flash). When that model is exhausted we transparently retry
+    the next model in the chain instead of failing the whole request.
+    """
+    gemini = _gemini_client()
+    models = [model or GEMINI_MODEL, *GEMINI_FALLBACK_MODELS]
+    last_exc: Exception | None = None
+    for m in models:
+        try:
+            resp = gemini.models.generate_content(model=m, contents=prompt)
+            return (resp.text or "").strip()
+        except Exception as exc:  # noqa: BLE001
+            msg = str(exc)
+            # Skip to the next model on quota (429) or deprecated/unavailable
+            # (404) errors. Anything else is a genuine failure.
+            if (
+                "429" in msg
+                or "RESOURCE_EXHAUSTED" in msg
+                or "quota" in msg.lower()
+                or "404" in msg
+                or "NOT_FOUND" in msg
+            ):
+                last_exc = exc
+                continue
+            raise StoryForgeError(f"Gemini generation failed: {exc}") from exc
+    raise QuotaExhaustedError(
+        "All Gemini models are out of free-tier quota right now. "
+        "Try again later, or add a paid Gemini key / raise your quota."
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -129,11 +172,12 @@ def get_realtime_info(query: str, *, max_results: int | None = None) -> Research
 
     gemini = _gemini_client()
     try:
-        resp = gemini.models.generate_content(model=GEMINI_MODEL, contents=prompt)
-    except Exception as exc:
+        summary = _gemini_generate(prompt)
+    except QuotaExhaustedError:
+        raise
+    except StoryForgeError as exc:
         raise StoryForgeError(f"Gemini summarization failed: {exc}") from exc
 
-    summary = (resp.text or "").strip()
     if not summary:
         # Fall back to Tavily's own answer rather than returning nothing.
         summary = tavily_answer or "No summary could be generated."
@@ -188,11 +232,12 @@ def generate_video_script(
 
     gemini = _gemini_client()
     try:
-        resp = gemini.models.generate_content(model=GEMINI_MODEL, contents=prompt)
-    except Exception as exc:
+        script = _gemini_generate(prompt)
+    except QuotaExhaustedError:
+        raise
+    except StoryForgeError as exc:
         raise StoryForgeError(f"Gemini script generation failed: {exc}") from exc
 
-    script = (resp.text or "").strip()
     if not script:
         raise StoryForgeError("Gemini returned an empty script.")
     return script

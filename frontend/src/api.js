@@ -4,17 +4,24 @@ const BASE = '/api'
 async function req(method, path, body, idToken) {
   const headers = { 'Content-Type': 'application/json' }
   if (idToken) headers['Authorization'] = `Bearer ${idToken}`
-  const res = await fetch(`${BASE}${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  })
+  let res
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    })
+  } catch (netErr) {
+    throw new Error('Network error — is the server running?')
+  }
   if (!res.ok) {
-    let msg = 'Request failed'
+    let msg = `Request failed (${res.status})`
     try {
       const d = await res.json()
-      msg = d.detail || msg
-    } catch (_) {}
+      if (d && d.detail) msg = d.detail
+    } catch (_) {
+      // non-JSON error body; keep the status-based message
+    }
     throw new Error(msg)
   }
   return res.json()
