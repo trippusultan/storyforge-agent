@@ -3,6 +3,9 @@ fastapi>=0.115
 uvicorn>=0.30
 python-dotenv>=1.0
 requests>=2.31
+pydantic>=2.0
+# Pipeline deps
+tavily-python>=0.3
 # LLM providers (bring-your-own-key, multi-LLM support)
 google-genai>=2.12        # gemini (server default)
 openai>=1.30             # openai / openai-compatible (OpenRouter, Groq, ...)
