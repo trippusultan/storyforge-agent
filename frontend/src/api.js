@@ -1,5 +1,7 @@
-// Thin fetch wrapper around the FastAPI gateway.
-const BASE = '/api'
+// Thin fetch wrapper around the API gateway.
+// On Firebase Hosting, set VITE_API_BASE to the deployed backend URL
+// (e.g. https://storyforge-api.onrender.com). Locally it defaults to "/api".
+const BASE = (import.meta.env.VITE_API_BASE || '/api').replace(/\/$/, '')
 
 async function req(method, path, body, idToken) {
   const headers = { 'Content-Type': 'application/json' }

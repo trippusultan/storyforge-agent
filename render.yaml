@@ -1,0 +1,31 @@
+# Render (free tier) Blueprint — deploys the FastAPI backend as a web service.
+# Connect this GitHub repo in the Render dashboard (New → Blueprint → select repo).
+# Render reads this file and creates the service automatically.
+services:
+  - type: web
+    name: storyforge-api
+    runtime: python
+    plan: free
+    region: oregon
+    branch: main
+    rootDir: .
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: FIREBASE_API_KEY
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.0-flash
+      - key: GEMINI_FALLBACK_MODELS
+        value: gemini-2.5-flash
+      - key: TAVILY_MAX_RESULTS
+        value: "5"

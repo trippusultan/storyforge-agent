@@ -1,9 +1,12 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// Served by the FastAPI gateway at the /ui/ base path.
+// Base path. For the FastAPI gateway use "/ui/"; for Firebase Hosting (root)
+// build with VITE_BASE=/
+const BASE = process.env.VITE_BASE || '/ui/'
+
 export default defineConfig({
-  base: '/ui/',
+  base: BASE,
   plugins: [react()],
   server: {
     port: 5173,
