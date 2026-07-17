@@ -4,6 +4,7 @@ import { api } from './api.js'
 import SpotlightText from './components/SpotlightText.tsx'
 import ShinyPill from './components/ShinyPill.tsx'
 import ElectricBorder from './components/ElectricBorder.tsx'
+import DirectionHover from './components/DirectionHover.tsx'
 
 const TONES = ['Energetic', 'Calm', 'Dramatic', 'Funny', 'Inspirational']
 
@@ -244,6 +245,8 @@ export default function App() {
             {user.display_name || user.email}
           </span>
         </button>
+
+        <div className="side-divider" />
 
         <div className="side-label">Recent research</div>
         {history.length === 0 && (
@@ -503,6 +506,36 @@ export default function App() {
             </div>
           )}
         </div>
+        <footer className="site-footer">
+          <div className="foot-inner">
+            <span className="foot-brand">
+              StoryForge <span className="foot-accent">Agent</span>
+            </span>
+            <span className="foot-sep">·</span>
+            <span className="foot-credit">
+              Crafted by{' '}
+              <DirectionHover
+                title="trippusultan"
+                href="https://github.com/trippusultan"
+                fontSize={15}
+                fontWeight={600}
+                letterSpacing="0em"
+                gap={4}
+                textColor="#c2b6a6"
+                hoverColor="#C2613F"
+              />
+            </span>
+            <span className="foot-sep">·</span>
+            <a
+              className="foot-link"
+              href="https://github.com/trippusultan/storyforge-agent"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Source
+            </a>
+          </div>
+        </footer>
       </main>
 
       {acctOpen && (
