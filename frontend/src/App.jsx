@@ -593,6 +593,18 @@ function AccountModal({ auth, onClose }) {
         </ShinyButton>
 
         <hr style={{ border: 'none', borderTop: '1px solid var(--hair)', margin: '1.4rem 0' }} />
+        <button
+          className="btn"
+          style={{ width: '100%' }}
+          onClick={() => {
+            auth.signout()
+            onClose()
+          }}
+        >
+          Sign out
+        </button>
+
+        <hr style={{ border: 'none', borderTop: '1px solid var(--hair)', margin: '1.4rem 0' }} />
         <div style={{ fontWeight: 600, color: '#e8917a' }}>Danger zone</div>
         <div style={{ fontSize: '0.82rem', color: 'var(--bone-soft)' }}>
           Permanently delete your account and all saved history.
