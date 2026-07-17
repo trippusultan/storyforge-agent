@@ -212,6 +212,9 @@ button {
 }
 .doc-sec {
   margin: 1.8rem 0 0;
+  padding: 1.3rem 1.5rem;
+  background: var(--panel);
+  border-radius: 14px;
 }
 .doc-sec h2 {
   font-size: 1.3rem;

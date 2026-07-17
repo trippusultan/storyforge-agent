@@ -1,40 +1,23 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from './auth.js'
 import { api } from './api.js'
+import SpotlightText from './components/SpotlightText.tsx'
+import ShinyPill from './components/ShinyPill.tsx'
+import ElectricBorder from './components/ElectricBorder.tsx'
 
 const TONES = ['Energetic', 'Calm', 'Dramatic', 'Funny', 'Inspirational']
 
-// ---------- OriginKit-style: spotlight text on hover ----------
-function SpotlightText({ children }) {
-  const [pos, setPos] = useState({ x: '50%', y: '50%' })
-  return (
-    <span
-      className="spotlight"
-      onMouseMove={(e) => {
-        const r = e.currentTarget.getBoundingClientRect()
-        setPos({ x: `${e.clientX - r.left}px`, y: `${e.clientY - r.top}px` })
-      }}
-    >
-      {children}
-      <span
-        className="glow"
-        style={{ '--mx': pos.x, '--my': pos.y }}
-      />
-    </span>
-  )
-}
-
-// ---------- OriginKit-style: shiny-pill CTA ----------
+// ---------- OriginKit (real) ShinyPill used for CTAs ----------
 function ShinyButton({ children, onClick, disabled, type = 'button' }) {
   return (
     <button
-      className={`btn primary shiny-pill ${disabled ? 'disabled' : ''}`}
+      className={`btn primary ${disabled ? 'disabled' : ''}`}
       onClick={onClick}
       disabled={disabled}
       type={type}
-      style={{ opacity: disabled ? 0.6 : 1 }}
+      style={{ opacity: disabled ? 0.6 : 1, border: 'none', background: 'transparent', padding: 0 }}
     >
-      {children}
+      <ShinyPill text={typeof children === 'string' ? children : 'Forge'} speed={2} />
     </button>
   )
 }
@@ -145,11 +128,13 @@ export default function App() {
     return (
       <div className="auth-wrap">
         <div className="auth-card">
-          <SpotlightText>
-            <h1>
-              StoryForge <span style={{ color: 'var(--clay)' }}>Agent</span>
-            </h1>
-          </SpotlightText>
+          <SpotlightText
+            text="StoryForge Agent"
+            brightColor="var(--clay)"
+            dimColor="rgba(237, 230, 221, 0.22)"
+            maskSize={160}
+            intensity={12}
+          />
           <p className="sub">
             Sign in to research any topic and forge a ready-to-record short-form
             video script — your work is saved to your account.
@@ -292,11 +277,13 @@ export default function App() {
         <div className="scroll">
           {!doc ? (
             <div className="empty">
-              <SpotlightText>
-                <h1>
-                  StoryForge <span style={{ color: 'var(--clay)' }}>Agent</span>
-                </h1>
-              </SpotlightText>
+              <SpotlightText
+                text="StoryForge Agent"
+                brightColor="var(--bone)"
+                dimColor="rgba(237, 230, 221, 0.18)"
+                maskSize={180}
+                intensity={10}
+              />
               <p>
                 Ask any topic — get a real-time research brief and a
                 ready-to-record short-form video script.
@@ -336,7 +323,7 @@ export default function App() {
                 </a>
               </div>
 
-              <section className="doc-sec electric-card">
+              <ElectricBorder className="doc-sec" glowColor="var(--clay)" borderRadius={14}>
                 <h2>Research Brief</h2>
                 <div
                   className="body"
@@ -364,14 +351,14 @@ export default function App() {
                     </ul>
                   </>
                 )}
-              </section>
+              </ElectricBorder>
 
-              <section className="doc-sec electric-card">
+              <ElectricBorder className="doc-sec" glowColor="var(--clay)" borderRadius={14}>
                 <h2>Video Script</h2>
                 <div className="body" style={{ whiteSpace: 'pre-wrap' }}>
                   {doc.script}
                 </div>
-              </section>
+              </ElectricBorder>
             </div>
           )}
         </div>
