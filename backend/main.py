@@ -28,8 +28,15 @@ sys.path.insert(0, str(ROOT))
 import storyforge.core as core
 import storyforge.auth as auth
 import storyforge.history as history  # noqa: F401  (used via proxies)
-
 app = FastAPI(title="StoryForge Agent API")
+
+
+@app.exception_handler(Exception)
+async def _unhandled(exc: Exception):
+    if isinstance(exc, HTTPException):
+        raise exc
+    return JSONResponse(status_code=500, content={"detail": f"Unhandled: {exc!r}"})
+
 
 app.add_middleware(
     CORSMiddleware,
